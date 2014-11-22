@@ -1,9 +1,0 @@
-base
-knitr
-lattice
-ggplot2
-caret
-rattle
-rpart
-rpart.plot
-dplyr
