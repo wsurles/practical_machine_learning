@@ -1,0 +1,171 @@
+<html>
+  
+<head>
+<link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Open Sans">
+</head>
+  
+<style>
+  body {
+    font-family: 'Open Sans', serif;          
+    font-size: 15px;
+    margin: 50px;
+  }
+</style>
+  
+<body>
+<div style="width:800px; margin:0 auto;">
+
+<!--begin.rcode, echo=F, message=FALSE
+
+opts_chunk$set(comment = NA, 
+               message = F,
+               tidy = F,
+               cache = F)
+
+end.rcode-->
+
+
+
+<h1>Pracitcal Machine Learning Project</h1>
+<h2>
+William Surles<br>   
+2014-11-22
+</h2>
+
+<h2>Project Summary</h2>
+<p>
+The goal is to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants to predict the manner in which they did the exercise. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways.
+<br><br>
+More information is available from the website
+<a href="http://groupware.les.inf.puc-rio.br/har">here</a>.
+(see the section on the Weight Lifting Exercise Dataset). 
+<br>
+The training data for this project are available 
+<a href="https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv">here</a>.
+<br>
+The test data are available 
+<a href="https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv">here</a>.
+<br>
+The data for this project come from this 
+<a href="http://groupware.les.inf.puc-rio.br/har.">source</a>.
+</p>
+
+<h2>Loading and Cleaning the Data</h2>
+<h3>Libraries Used</h3>
+<!--begin.rcode 
+library(caret)
+library(dplyr)
+end.rcode-->
+
+<h3>Load data</h3>
+<!--begin.rcode
+training <- read.csv('pml-training.csv')
+testing <- read.csv('pml-testing.csv')
+end.rcode-->
+
+<h3>Cleaning the Measurements</h3>
+There are 19622 measurements of 160 variables. 
+The variables include values taken over time during the process of an exercise (called a 'window' in the data set) as well as summary values for the exercise window.  
+The summary variables begin with words like min, max, avg, kurtosis, or skewness. 
+The measurements for the summary variables are all `NA` in the submission test data and also are very sparse in the training data. They only exist for the last value in the window.
+I am removing all of these variables as they can not be used to predict. (100 Variables)
+<!--begin.rcode
+names(training)
+
+## Training classe splits
+table(training$classe)
+
+## Missing values in testing data
+table(colSums(is.na(testing)))
+
+## Missing values in training data
+table(colSums(is.na(training)))
+
+## Look up names of missing values and remove
+names_rm <- names(testing)[colSums(is.na(testing))>0]
+testing2 <- select(testing, -one_of(names_rm))
+training2 <- select(training, -one_of(names_rm))
+dim(training2)
+end.rcode-->
+
+<p>
+We now have 60 measurement in the training data.
+We also need to get rid of the time and identiy values, things like names and windows.
+The data is orderd so these values would affect the preditions but will not transfer to future data sets.
+
+</p>
+<!--begin.rcode
+
+training3 <- select(training2, -X, -user_name, -raw_timestamp_part_1,
+                   -raw_timestamp_part_2, -cvtd_timestamp, -new_window, -num_window)
+testing3 <- select(testing2, -X, -user_name, -raw_timestamp_part_1,
+                  -raw_timestamp_part_2, -cvtd_timestamp, -new_window, -num_window)
+dim(training3)
+end.rcode-->
+
+<p>
+We now have 19622 measurements of 52 variables to predict the classe
+split training into training and testing data sets.
+</p>
+
+<h2>Building the model</h2>
+
+<h3>Splitting the data</h3>
+<p>
+First, I want to split the training data into a train and a test set so I can do some testing of my own before I make preditions on the submission testing data set.
+</p>
+<!--begin.rcode
+inTrain <- createDataPartition(y = training3$classe, p = 0.7, list = F)
+train <- training3[inTrain,]
+test <- training3[-inTrain,]
+
+end.rcode-->
+
+<h3>Modeling Choices</h3>
+<p>
+I choose a random forest model with cross validation. I choose 4 folds with 5 repeats.
+These choices gave me good predition accuracy while not taking to long to build a model.
+</p>
+<!--begin.rcode
+fitControl <- trainControl(method = "cv",
+                           number = 4,
+                           repeats = 5,
+                           classProbs = TRUE)
+
+modFit <- train(classe ~ ., 
+                data = train,
+                method = "rf",
+                trControl = fitControl,
+                verbose = FALSE)
+end.rcode-->
+
+<p>
+Originally training on .7 percent of the training data with the random forest defaults was too slow. The model was not finishing. Watching shows on Netflix while the model is completing is always an option but its also nice to have a faster model and understand how to speed things up. I read on the forums about some parameters that could be adjusted and I experimented with these until I found a fast model that also had high prediciton accuracy. 
+
+I started with training on only .20 percent of the training data. This still was taking a long time. I decided to chang the random forest default resampling method from 'boot' with 25 resamples to cross validation with only 4 folds and 5 repeats. This made the model train very fast, but predicition accruacy was 97.5 %.  I then increased the train set to .70 percent of the original training data and kept the same parammeters. This resulted in a predicition accuracy of .996%
+
+</p>
+
+<h3>Cross Validation and Out of Sample Error</h3>
+<!--begin.rcode
+modFit
+
+pred <- predict(modFit, test)
+test$predRight <- pred == test$classe
+table(pred, test$classe)
+
+percRight <- sum(pred == test$classe)/length(pred)
+percRight
+
+
+end.rcode-->
+
+<p>
+I would expect out of sample error to be < .005.
+</p> 
+
+<h2>Test Case Predition Results</h2>
+The test case prediction submitted for the assignment were all correct. 20 out of 20. 
+
+</body>
+</html>

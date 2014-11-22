@@ -1,0 +1,350 @@
+<html>
+  
+<head>
+<style type="text/css">
+.knitr.inline {
+  background-color: #f7f7f7;
+  border:solid 1px #B0B0B0;
+}
+.error {
+	font-weight: bold;
+	color: #FF0000;
+},
+.warning {
+	font-weight: bold;
+}
+.message {
+	font-style: italic;
+}
+.source, .output, .warning, .error, .message {
+	padding: 0em 1em;
+  border:solid 1px #F7F7F7;
+}
+.source {
+  background-color: #f5f5f5;
+}
+.rimage.left {
+  text-align: left;
+}
+.rimage.right {
+  text-align: right;
+}
+.rimage.center {
+  text-align: center;
+}
+.hl.num {
+  color: #AF0F91;
+}
+.hl.str {
+  color: #317ECC;
+}
+.hl.com {
+  color: #AD95AF;
+  font-style: italic;
+}
+.hl.opt {
+  color: #000000;
+}
+.hl.std {
+  color: #585858;
+}
+.hl.kwa {
+  color: #295F94;
+  font-weight: bold;
+}
+.hl.kwb {
+  color: #B05A65;
+}
+.hl.kwc {
+  color: #55aa55;
+}
+.hl.kwd {
+  color: #BC5A65;
+  font-weight: bold;
+}
+</style>
+<link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Open Sans">
+</head>
+  
+<style>
+  body {
+    font-family: 'Open Sans', serif;          
+    font-size: 15px;
+    margin: 50px;
+  }
+</style>
+  
+<body>
+<div style="width:800px; margin:0 auto;">
+
+
+
+
+
+<h1>Pracitcal Machine Learning Project</h1>
+<h2>
+William Surles<br>   
+2014-11-22
+</h2>
+
+<h2>Project Summary</h2>
+<p>
+The goal is to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants to predict the manner in which they did the exercise. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways.
+<br><br>
+More information is available from the website
+<a href="http://groupware.les.inf.puc-rio.br/har">here</a>.
+(see the section on the Weight Lifting Exercise Dataset). 
+<br>
+The training data for this project are available 
+<a href="https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv">here</a>.
+<br>
+The test data are available 
+<a href="https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv">here</a>.
+<br>
+The data for this project come from this 
+<a href="http://groupware.les.inf.puc-rio.br/har.">source</a>.
+</p>
+
+<h2>Loading and Cleaning the Data</h2>
+<h3>Libraries Used</h3>
+<div class="chunk" id="unnamed-chunk-2"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl kwd">library</span><span class="hl std">(caret)</span>
+<span class="hl kwd">library</span><span class="hl std">(dplyr)</span>
+</pre></div>
+</div></div>
+
+<h3>Load data</h3>
+<div class="chunk" id="unnamed-chunk-3"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl std">training</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">read.csv</span><span class="hl std">(</span><span class="hl str">'pml-training.csv'</span><span class="hl std">)</span>
+<span class="hl std">testing</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">read.csv</span><span class="hl std">(</span><span class="hl str">'pml-testing.csv'</span><span class="hl std">)</span>
+</pre></div>
+</div></div>
+
+<h3>Cleaning the Measurements</h3>
+There are 19622 measurements of 160 variables. 
+The variables include values taken over time during the process of an exercise (called a 'window' in the data set) as well as summary values for the exercise window.  
+The summary variables begin with words like min, max, avg, kurtosis, or skewness. 
+The measurements for the summary variables are all `NA` in the submission test data and also are very sparse in the training data. They only exist for the last value in the window.
+I am removing all of these variables as they can not be used to predict. (100 Variables)
+<div class="chunk" id="unnamed-chunk-4"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl kwd">names</span><span class="hl std">(training)</span>
+</pre></div>
+<div class="output"><pre class="knitr r">  [1] "X"                        "user_name"               
+  [3] "raw_timestamp_part_1"     "raw_timestamp_part_2"    
+  [5] "cvtd_timestamp"           "new_window"              
+  [7] "num_window"               "roll_belt"               
+  [9] "pitch_belt"               "yaw_belt"                
+ [11] "total_accel_belt"         "kurtosis_roll_belt"      
+ [13] "kurtosis_picth_belt"      "kurtosis_yaw_belt"       
+ [15] "skewness_roll_belt"       "skewness_roll_belt.1"    
+ [17] "skewness_yaw_belt"        "max_roll_belt"           
+ [19] "max_picth_belt"           "max_yaw_belt"            
+ [21] "min_roll_belt"            "min_pitch_belt"          
+ [23] "min_yaw_belt"             "amplitude_roll_belt"     
+ [25] "amplitude_pitch_belt"     "amplitude_yaw_belt"      
+ [27] "var_total_accel_belt"     "avg_roll_belt"           
+ [29] "stddev_roll_belt"         "var_roll_belt"           
+ [31] "avg_pitch_belt"           "stddev_pitch_belt"       
+ [33] "var_pitch_belt"           "avg_yaw_belt"            
+ [35] "stddev_yaw_belt"          "var_yaw_belt"            
+ [37] "gyros_belt_x"             "gyros_belt_y"            
+ [39] "gyros_belt_z"             "accel_belt_x"            
+ [41] "accel_belt_y"             "accel_belt_z"            
+ [43] "magnet_belt_x"            "magnet_belt_y"           
+ [45] "magnet_belt_z"            "roll_arm"                
+ [47] "pitch_arm"                "yaw_arm"                 
+ [49] "total_accel_arm"          "var_accel_arm"           
+ [51] "avg_roll_arm"             "stddev_roll_arm"         
+ [53] "var_roll_arm"             "avg_pitch_arm"           
+ [55] "stddev_pitch_arm"         "var_pitch_arm"           
+ [57] "avg_yaw_arm"              "stddev_yaw_arm"          
+ [59] "var_yaw_arm"              "gyros_arm_x"             
+ [61] "gyros_arm_y"              "gyros_arm_z"             
+ [63] "accel_arm_x"              "accel_arm_y"             
+ [65] "accel_arm_z"              "magnet_arm_x"            
+ [67] "magnet_arm_y"             "magnet_arm_z"            
+ [69] "kurtosis_roll_arm"        "kurtosis_picth_arm"      
+ [71] "kurtosis_yaw_arm"         "skewness_roll_arm"       
+ [73] "skewness_pitch_arm"       "skewness_yaw_arm"        
+ [75] "max_roll_arm"             "max_picth_arm"           
+ [77] "max_yaw_arm"              "min_roll_arm"            
+ [79] "min_pitch_arm"            "min_yaw_arm"             
+ [81] "amplitude_roll_arm"       "amplitude_pitch_arm"     
+ [83] "amplitude_yaw_arm"        "roll_dumbbell"           
+ [85] "pitch_dumbbell"           "yaw_dumbbell"            
+ [87] "kurtosis_roll_dumbbell"   "kurtosis_picth_dumbbell" 
+ [89] "kurtosis_yaw_dumbbell"    "skewness_roll_dumbbell"  
+ [91] "skewness_pitch_dumbbell"  "skewness_yaw_dumbbell"   
+ [93] "max_roll_dumbbell"        "max_picth_dumbbell"      
+ [95] "max_yaw_dumbbell"         "min_roll_dumbbell"       
+ [97] "min_pitch_dumbbell"       "min_yaw_dumbbell"        
+ [99] "amplitude_roll_dumbbell"  "amplitude_pitch_dumbbell"
+[101] "amplitude_yaw_dumbbell"   "total_accel_dumbbell"    
+[103] "var_accel_dumbbell"       "avg_roll_dumbbell"       
+[105] "stddev_roll_dumbbell"     "var_roll_dumbbell"       
+[107] "avg_pitch_dumbbell"       "stddev_pitch_dumbbell"   
+[109] "var_pitch_dumbbell"       "avg_yaw_dumbbell"        
+[111] "stddev_yaw_dumbbell"      "var_yaw_dumbbell"        
+[113] "gyros_dumbbell_x"         "gyros_dumbbell_y"        
+[115] "gyros_dumbbell_z"         "accel_dumbbell_x"        
+[117] "accel_dumbbell_y"         "accel_dumbbell_z"        
+[119] "magnet_dumbbell_x"        "magnet_dumbbell_y"       
+[121] "magnet_dumbbell_z"        "roll_forearm"            
+[123] "pitch_forearm"            "yaw_forearm"             
+[125] "kurtosis_roll_forearm"    "kurtosis_picth_forearm"  
+[127] "kurtosis_yaw_forearm"     "skewness_roll_forearm"   
+[129] "skewness_pitch_forearm"   "skewness_yaw_forearm"    
+[131] "max_roll_forearm"         "max_picth_forearm"       
+[133] "max_yaw_forearm"          "min_roll_forearm"        
+[135] "min_pitch_forearm"        "min_yaw_forearm"         
+[137] "amplitude_roll_forearm"   "amplitude_pitch_forearm" 
+[139] "amplitude_yaw_forearm"    "total_accel_forearm"     
+[141] "var_accel_forearm"        "avg_roll_forearm"        
+[143] "stddev_roll_forearm"      "var_roll_forearm"        
+[145] "avg_pitch_forearm"        "stddev_pitch_forearm"    
+[147] "var_pitch_forearm"        "avg_yaw_forearm"         
+[149] "stddev_yaw_forearm"       "var_yaw_forearm"         
+[151] "gyros_forearm_x"          "gyros_forearm_y"         
+[153] "gyros_forearm_z"          "accel_forearm_x"         
+[155] "accel_forearm_y"          "accel_forearm_z"         
+[157] "magnet_forearm_x"         "magnet_forearm_y"        
+[159] "magnet_forearm_z"         "classe"                  
+</pre></div>
+<div class="source"><pre class="knitr r"><span class="hl com">## Training classe splits</span>
+<span class="hl kwd">table</span><span class="hl std">(training</span><span class="hl opt">$</span><span class="hl std">classe)</span>
+</pre></div>
+<div class="output"><pre class="knitr r">
+   A    B    C    D    E 
+5580 3797 3422 3216 3607 
+</pre></div>
+<div class="source"><pre class="knitr r"><span class="hl com">## Missing values in testing data</span>
+<span class="hl kwd">table</span><span class="hl std">(</span><span class="hl kwd">colSums</span><span class="hl std">(</span><span class="hl kwd">is.na</span><span class="hl std">(testing)))</span>
+</pre></div>
+<div class="output"><pre class="knitr r">
+  0  20 
+ 60 100 
+</pre></div>
+<div class="source"><pre class="knitr r"><span class="hl com">## Missing values in training data</span>
+<span class="hl kwd">table</span><span class="hl std">(</span><span class="hl kwd">colSums</span><span class="hl std">(</span><span class="hl kwd">is.na</span><span class="hl std">(training)))</span>
+</pre></div>
+<div class="output"><pre class="knitr r">
+    0 19216 
+   93    67 
+</pre></div>
+<div class="source"><pre class="knitr r"><span class="hl com">## Look up names of missing values and remove</span>
+<span class="hl std">names_rm</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">names</span><span class="hl std">(testing)[</span><span class="hl kwd">colSums</span><span class="hl std">(</span><span class="hl kwd">is.na</span><span class="hl std">(testing))</span><span class="hl opt">&gt;</span><span class="hl num">0</span><span class="hl std">]</span>
+<span class="hl std">testing2</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">select</span><span class="hl std">(testing,</span> <span class="hl opt">-</span><span class="hl kwd">one_of</span><span class="hl std">(names_rm))</span>
+<span class="hl std">training2</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">select</span><span class="hl std">(training,</span> <span class="hl opt">-</span><span class="hl kwd">one_of</span><span class="hl std">(names_rm))</span>
+<span class="hl kwd">dim</span><span class="hl std">(training2)</span>
+</pre></div>
+<div class="output"><pre class="knitr r">[1] 19622    60
+</pre></div>
+</div></div>
+
+<p>
+We now have 60 measurement in the training data.
+We also need to get rid of the time and identiy values, things like names and windows.
+The data is orderd so these values would affect the preditions but will not transfer to future data sets.
+
+</p>
+<div class="chunk" id="unnamed-chunk-5"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl std">training3</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">select</span><span class="hl std">(training2,</span> <span class="hl opt">-</span><span class="hl std">X,</span> <span class="hl opt">-</span><span class="hl std">user_name,</span> <span class="hl opt">-</span><span class="hl std">raw_timestamp_part_1,</span>
+                   <span class="hl opt">-</span><span class="hl std">raw_timestamp_part_2,</span> <span class="hl opt">-</span><span class="hl std">cvtd_timestamp,</span> <span class="hl opt">-</span><span class="hl std">new_window,</span> <span class="hl opt">-</span><span class="hl std">num_window)</span>
+<span class="hl std">testing3</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">select</span><span class="hl std">(testing2,</span> <span class="hl opt">-</span><span class="hl std">X,</span> <span class="hl opt">-</span><span class="hl std">user_name,</span> <span class="hl opt">-</span><span class="hl std">raw_timestamp_part_1,</span>
+                  <span class="hl opt">-</span><span class="hl std">raw_timestamp_part_2,</span> <span class="hl opt">-</span><span class="hl std">cvtd_timestamp,</span> <span class="hl opt">-</span><span class="hl std">new_window,</span> <span class="hl opt">-</span><span class="hl std">num_window)</span>
+<span class="hl kwd">dim</span><span class="hl std">(training3)</span>
+</pre></div>
+<div class="output"><pre class="knitr r">[1] 19622    53
+</pre></div>
+</div></div>
+
+<p>
+We now have 19622 measurements of 52 variables to predict the classe
+split training into training and testing data sets.
+</p>
+
+<h2>Building the model</h2>
+
+<h3>Splitting the data</h3>
+<p>
+First, I want to split the training data into a train and a test set so I can do some testing of my own before I make preditions on the submission testing data set.
+</p>
+<div class="chunk" id="unnamed-chunk-6"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl std">inTrain</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">createDataPartition</span><span class="hl std">(</span><span class="hl kwc">y</span> <span class="hl std">= training3</span><span class="hl opt">$</span><span class="hl std">classe,</span> <span class="hl kwc">p</span> <span class="hl std">=</span> <span class="hl num">0.7</span><span class="hl std">,</span> <span class="hl kwc">list</span> <span class="hl std">= F)</span>
+<span class="hl std">train</span> <span class="hl kwb">&lt;-</span> <span class="hl std">training3[inTrain,]</span>
+<span class="hl std">test</span> <span class="hl kwb">&lt;-</span> <span class="hl std">training3[</span><span class="hl opt">-</span><span class="hl std">inTrain,]</span>
+</pre></div>
+</div></div>
+
+<h3>Modeling Choices</h3>
+<p>
+I choose a random forest model with cross validation. I choose 4 folds with 5 repeats.
+These choices gave me good predition accuracy while not taking to long to build a model.
+</p>
+<div class="chunk" id="unnamed-chunk-7"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl std">fitControl</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">trainControl</span><span class="hl std">(</span><span class="hl kwc">method</span> <span class="hl std">=</span> <span class="hl str">&quot;cv&quot;</span><span class="hl std">,</span>
+                           <span class="hl kwc">number</span> <span class="hl std">=</span> <span class="hl num">4</span><span class="hl std">,</span>
+                           <span class="hl kwc">repeats</span> <span class="hl std">=</span> <span class="hl num">5</span><span class="hl std">,</span>
+                           <span class="hl kwc">classProbs</span> <span class="hl std">=</span> <span class="hl num">TRUE</span><span class="hl std">)</span>
+
+<span class="hl std">modFit</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">train</span><span class="hl std">(classe</span> <span class="hl opt">~</span> <span class="hl std">.,</span>
+                <span class="hl kwc">data</span> <span class="hl std">= train,</span>
+                <span class="hl kwc">method</span> <span class="hl std">=</span> <span class="hl str">&quot;rf&quot;</span><span class="hl std">,</span>
+                <span class="hl kwc">trControl</span> <span class="hl std">= fitControl,</span>
+                <span class="hl kwc">verbose</span> <span class="hl std">=</span> <span class="hl num">FALSE</span><span class="hl std">)</span>
+</pre></div>
+</div></div>
+
+<p>
+Originally training on .7 percent of the training data with the random forest defaults was too slow. The model was not finishing. Watching shows on Netflix while the model is completing is always an option but its also nice to have a faster model and understand how to speed things up. I read on the forums about some parameters that could be adjusted and I experimented with these until I found a fast model that also had high prediciton accuracy. 
+
+I started with training on only .20 percent of the training data. This still was taking a long time. I decided to chang the random forest default resampling method from 'boot' with 25 resamples to cross validation with only 4 folds and 5 repeats. This made the model train very fast, but predicition accruacy was 97.5 %.  I then increased the train set to .70 percent of the original training data and kept the same parammeters. This resulted in a predicition accuracy of .996%
+
+</p>
+
+<h3>Cross Validation and Out of Sample Error</h3>
+<div class="chunk" id="unnamed-chunk-8"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl std">modFit</span>
+</pre></div>
+<div class="output"><pre class="knitr r">Random Forest 
+
+13737 samples
+   52 predictor
+    5 classes: 'A', 'B', 'C', 'D', 'E' 
+
+No pre-processing
+Resampling: Cross-Validated (4 fold) 
+
+Summary of sample sizes: 10302, 10303, 10303, 10303 
+
+Resampling results across tuning parameters:
+
+  mtry  Accuracy  Kappa  Accuracy SD  Kappa SD
+   2    0.990     0.987  0.00314      0.00397 
+  27    0.990     0.987  0.00250      0.00316 
+  52    0.983     0.978  0.00249      0.00315 
+
+Accuracy was used to select the optimal model using  the largest value.
+The final value used for the model was mtry = 2. 
+</pre></div>
+<div class="source"><pre class="knitr r"><span class="hl std">pred</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">predict</span><span class="hl std">(modFit, test)</span>
+<span class="hl std">test</span><span class="hl opt">$</span><span class="hl std">predRight</span> <span class="hl kwb">&lt;-</span> <span class="hl std">pred</span> <span class="hl opt">==</span> <span class="hl std">test</span><span class="hl opt">$</span><span class="hl std">classe</span>
+<span class="hl kwd">table</span><span class="hl std">(pred, test</span><span class="hl opt">$</span><span class="hl std">classe)</span>
+</pre></div>
+<div class="output"><pre class="knitr r">    
+pred    A    B    C    D    E
+   A 1674    5    0    0    0
+   B    0 1133   11    0    0
+   C    0    1 1014   23    0
+   D    0    0    1  940    2
+   E    0    0    0    1 1080
+</pre></div>
+<div class="source"><pre class="knitr r"><span class="hl std">percRight</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">sum</span><span class="hl std">(pred</span> <span class="hl opt">==</span> <span class="hl std">test</span><span class="hl opt">$</span><span class="hl std">classe)</span><span class="hl opt">/</span><span class="hl kwd">length</span><span class="hl std">(pred)</span>
+<span class="hl std">percRight</span>
+</pre></div>
+<div class="output"><pre class="knitr r">[1] 0.9925234
+</pre></div>
+</div></div>
+
+<p>
+I would expect out of sample error to be < .005.
+</p> 
+
+<h2>Test Case Predition Results</h2>
+The test case prediction submitted for the assignment were all correct. 20 out of 20. 
+
+</body>
+</html>
